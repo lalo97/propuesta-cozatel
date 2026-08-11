@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f7b8a">
+<title>Asistente de agenda por WhatsApp — Propuesta</title>
+<style>
+  :root{
+    --ink:#12232e;
+    --ink-soft:#4a6572;
+    --line:#dde5ea;
+    --bg:#f4f7f9;
+    --card:#ffffff;
+    --accent:#0f7b8a;
+    --accent-soft:#e3f2f4;
+    --warn:#b26a00;
+    --warn-soft:#fdf1de;
+    --ok:#1e7d52;
+    --ok-soft:#e4f4ec;
+    --danger:#b3352c;
+    --danger-soft:#fbeae8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    background:var(--bg);color:var(--ink);
+    height:100vh;height:100dvh;overflow:hidden;
+    overscroll-behavior:none;
+  }
+  .deck{height:100vh;height:100dvh;display:flex;align-items:center;justify-content:center;padding:28px 28px 74px}
+  .slide{
+    display:none;width:100%;max-width:1060px;max-height:100%;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:44px 52px;box-shadow:0 6px 28px rgba(18,35,46,.07);
+    animation:fade .28s ease;
+  }
+  .slide.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:12px}
+  h1{font-size:40px;line-height:1.15;letter-spacing:-.5px;margin-bottom:16px}
+  h2{font-size:30px;line-height:1.2;letter-spacing:-.3px;margin-bottom:20px}
+  h3{font-size:17px;margin-bottom:8px}
+  p{font-size:16.5px;line-height:1.6;color:var(--ink-soft)}
+  .lead{font-size:19px;color:var(--ink);line-height:1.55}
+  strong{color:var(--ink)}
+
+  .grid{display:grid;gap:14px;margin-top:22px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .box{background:#fbfdfe;border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .box p{font-size:15px}
+  .box.accent{background:var(--accent-soft);border-color:#bfdfe3}
+  .box.warn{background:var(--warn-soft);border-color:#f0dcbb}
+  .box.ok{background:var(--ok-soft);border-color:#c6e6d5}
+  .box.danger{background:var(--danger-soft);border-color:#f2cec9}
+
+  ul{margin:16px 0 0 0;list-style:none}
+  li{position:relative;padding:9px 0 9px 34px;font-size:16.5px;line-height:1.5;color:var(--ink-soft);border-bottom:1px solid #eef3f5}
+  li:last-child{border-bottom:none}
+  li strong{color:var(--ink)}
+  li::before{
+    content:"";position:absolute;left:6px;top:17px;width:9px;height:9px;
+    border-radius:50%;background:var(--accent);
+  }
+  ul.num{counter-reset:n}
+  ul.num li{padding-left:44px;counter-increment:n}
+  ul.num li::before{
+    content:counter(n);width:24px;height:24px;top:10px;left:0;
+    background:var(--accent);color:#fff;border-radius:50%;
+    font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  }
+  ul.check li::before{content:"✓";background:transparent;color:var(--ok);font-size:17px;font-weight:800;width:auto;height:auto;top:9px;left:8px}
+  ul.cross li::before{content:"×";background:transparent;color:var(--danger);font-size:22px;font-weight:800;width:auto;height:auto;top:5px;left:9px}
+
+  table{width:100%;border-collapse:collapse;margin-top:20px;font-size:15.5px}
+  th{text-align:left;padding:11px 12px;background:#f0f5f7;color:var(--ink);font-size:13px;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--line)}
+  td{padding:13px 12px;border-bottom:1px solid #eef3f5;color:var(--ink-soft);vertical-align:top}
+  td strong{color:var(--ink)}
+  tr:last-child td{border-bottom:none}
+  .price{font-size:19px;font-weight:700;color:var(--accent);white-space:nowrap}
+
+  .tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.04em}
+  .tag.you{background:var(--warn-soft);color:var(--warn)}
+  .tag.me{background:var(--accent-soft);color:var(--accent)}
+  .tag.both{background:var(--ok-soft);color:var(--ok)}
+
+  .chat{background:#e9edef;border-radius:14px;padding:20px;margin-top:20px}
+  .msg{max-width:86%;padding:10px 14px;border-radius:12px;margin-bottom:10px;font-size:15px;line-height:1.45;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .msg.in{background:#fff;border-top-left-radius:3px}
+  .msg.out{background:#d6f2c9;margin-left:auto;border-top-right-radius:3px}
+  .msg .who{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#7a8b93;margin-bottom:3px}
+
+  .flow{display:flex;align-items:stretch;gap:10px;margin-top:26px;flex-wrap:wrap}
+  .node{flex:1;min-width:150px;background:#fbfdfe;border:1px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center}
+  .node .ico{font-size:26px;display:block;margin-bottom:8px}
+  .node b{display:block;font-size:15px;margin-bottom:4px}
+  .node span.d{font-size:13px;color:var(--ink-soft);line-height:1.4}
+  .arrow{display:flex;align-items:center;color:var(--accent);font-size:22px;font-weight:700}
+
+  .timeline{margin-top:24px}
+  .tstep{display:flex;gap:18px;padding:14px 0;border-bottom:1px solid #eef3f5}
+  .tstep:last-child{border-bottom:none}
+  .tweek{flex:0 0 108px;font-weight:700;color:var(--accent);font-size:14px;padding-top:2px}
+  .tbody{flex:1}
+  .tbody b{display:block;font-size:16px;margin-bottom:3px}
+  .tbody span{font-size:15px;color:var(--ink-soft);line-height:1.5}
+
+  .note{margin-top:22px;padding:14px 18px;border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;font-size:15.5px;line-height:1.55;color:var(--ink)}
+  .note.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .note.danger{border-color:var(--danger);background:var(--danger-soft)}
+
+  .cover{text-align:center;padding:70px 52px}
+  .cover h1{font-size:46px}
+  .cover .sub{font-size:20px;color:var(--ink-soft);margin-top:6px}
+  .cover .meta{margin-top:34px;padding-top:24px;border-top:1px solid var(--line);font-size:15px;color:var(--ink-soft)}
+
+  .nav{
+    position:fixed;bottom:0;left:0;right:0;height:60px;
+    padding-bottom:env(safe-area-inset-bottom);
+    height:calc(60px + env(safe-area-inset-bottom));
+    background:rgba(255,255,255,.94);backdrop-filter:blur(8px);
+    border-top:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;gap:18px;
+  }
+  .nav button{
+    background:var(--accent);color:#fff;border:none;border-radius:9px;
+    padding:9px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;
+    min-height:44px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  }
+  .nav button:disabled{background:#c9d6db;cursor:default}
+  .counter{font-size:14px;color:var(--ink-soft);min-width:88px;text-align:center;font-variant-numeric:tabular-nums}
+  .bar{position:fixed;top:0;left:0;height:3px;background:var(--accent);transition:width .25s ease;z-index:10}
+  .hint{position:fixed;bottom:70px;right:18px;font-size:12px;color:#9aacb4}
+
+  @media (max-width:760px){
+    .deck{padding:10px 10px calc(70px + env(safe-area-inset-bottom))}
+    .slide{padding:24px 18px;border-radius:14px}
+    h1{font-size:27px}
+    h2{font-size:22px;margin-bottom:16px}
+    h2 br{display:none}
+    .lead{font-size:17px}
+    p{font-size:16px}
+    li{font-size:16px}
+    .g2,.g3{grid-template-columns:1fr}
+    .tstep{flex-direction:column;gap:4px}
+    .tweek{flex-basis:auto}
+    .cover{padding:44px 18px}
+    .cover h1{font-size:30px}
+    .cover .sub{font-size:17px}
+    .flow{flex-direction:column;gap:8px}
+    .arrow{justify-content:center;transform:rotate(90deg);font-size:18px}
+    .chat{padding:14px}
+    .msg{max-width:92%}
+    .note{margin-top:18px;padding:12px 14px;font-size:15px}
+
+    /* Las tablas se apilan como tarjetas: en un teléfono, 3 columnas
+       con texto largo se vuelven ilegibles. */
+    table{margin-top:16px;font-size:15.5px}
+    table tr:first-child{display:none}          /* encabezados */
+    table,tbody,tr,td{display:block;width:100%}
+    tr{
+      border:1px solid var(--line);border-radius:12px;
+      background:#fbfdfe;padding:12px 14px;margin-bottom:12px;
+    }
+    tr:last-child{margin-bottom:0}
+    td{border:none;padding:5px 0;text-align:left !important}
+    td:first-child{
+      font-size:16.5px;color:var(--ink);
+      padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid #eef3f5;
+    }
+    td:first-child strong{font-weight:700}
+    .price{font-size:22px}
+
+    .nav{gap:10px}
+    .nav button{padding:9px 16px;font-size:14px}
+    .counter{min-width:64px;font-size:13px}
+    .hint{display:none}
+  }
+
+  /* Teléfonos angostos (iPhone SE y similares) */
+  @media (max-width:400px){
+    h1{font-size:24px}
+    .cover h1{font-size:26px}
+    h2{font-size:20px}
+  }
+
+  /* Teléfono en horizontal: casi no hay alto, se recorta el aire */
+  @media (max-height:520px) and (orientation:landscape){
+    .slide{padding:18px 22px}
+    .cover{padding:24px 22px}
+    h1,.cover h1{font-size:24px;margin-bottom:10px}
+    h2{font-size:20px;margin-bottom:12px}
+  }
+</style>
+</head>
+<body>
+
+<div class="bar" id="bar"></div>
+
+<div class="deck">
+
+<!-- 1 -->
+<section class="slide active cover">
+  <div class="eyebrow">Propuesta de servicio · Fase 1</div>
+  <h1>Un asistente que contesta tu WhatsApp<br>y agenda tus citas solo</h1>
+  <p class="sub">Para que ningún cliente nuevo se te escape mientras estás trabajando.</p>
+  <div class="meta">Preparado para <strong>Gerardo · COZATEL</strong> · Agosto 2026</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div class="eyebrow">El problema</div>
+  <h2>Cada hora que tardas en contestar,<br>el cliente ya le escribió a otro</h2>
+  <p class="lead">Hoy tú eres el único que lleva la agenda. Y estás en campo la mayor parte del día.</p>
+  <div class="grid g3">
+    <div class="box"><h3>⏱️ Respuesta lenta</h3><p>Entra un prospecto nuevo, tú estás arriba de un equipo. Contestas tres horas después.</p></div>
+    <div class="box"><h3>📉 Lead perdido</h3><p>El que buscaba servicio no espera: le escribió a tres proveedores y agenda con el primero que responde.</p></div>
+    <div class="box"><h3>🧠 Todo en tu cabeza</h3><p>La agenda depende de ti. Si creces o contratas a alguien, no hay sistema que le puedas heredar.</p></div>
+  </div>
+  <div class="note">La idea no es que trabajes más rápido. Es que el negocio conteste <strong>aunque tú no puedas</strong>.</div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <div class="eyebrow">La solución</div>
+  <h2>Un asistente en WhatsApp, conectado a tu calendario</h2>
+  <p class="lead">Trabaja las 24 horas. Conoce tus horarios, tus días bloqueados y cuánto tardas en trasladarte.</p>
+  <ul class="num">
+    <li><strong>Lee tu Google Calendar</strong> y respeta los días que ya tienes bloqueados por contratos de mantenimiento.</li>
+    <li><strong>Contesta al instante</strong> a cualquier persona que escriba, a cualquier hora, incluso fin de semana.</li>
+    <li><strong>Ofrece tus huecos libres y agenda de una</strong>, sin pedirte permiso — así no se pierde el lead.</li>
+    <li><strong>Deja margen de traslado</strong> entre citas, porque te mueves entre empresas en distintas zonas.</li>
+    <li><strong>Si tú mueves una cita, le avisa al cliente automáticamente.</strong> Tú no mandas ese mensaje.</li>
+    <li><strong>Tú puedes interrumpirlo cuando quieras</strong> y contestar personalmente. El bot se hace a un lado.</li>
+  </ul>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div class="eyebrow">Cómo se ve en la práctica</div>
+  <h2>Sábado, 9:40 de la noche</h2>
+  <div class="grid g2">
+    <div>
+      <div class="chat">
+        <div class="msg in"><span class="who">Prospecto nuevo</span>Buenas noches, ¿dan servicio a minisplits? Tengo dos en la oficina que ya no enfrían</div>
+        <div class="msg out"><span class="who">Asistente</span>¡Claro que sí! Manejamos mantenimiento y diagnóstico de minisplits. ¿En qué zona está su oficina?</div>
+        <div class="msg in"><span class="who">Prospecto nuevo</span>Por la Supermanzana 21</div>
+        <div class="msg out"><span class="who">Asistente</span>Perfecto, sí cubrimos esa zona. Tengo disponible <b>martes 11 a las 10:00 am</b> o <b>miércoles 12 a la 1:00 pm</b>. ¿Cuál le acomoda?</div>
+        <div class="msg in"><span class="who">Prospecto nuevo</span>El martes está bien</div>
+        <div class="msg out"><span class="who">Asistente</span>Listo, quedó agendado el martes 11 a las 10:00 am. ¿Me confirma la dirección y a nombre de quién?</div>
+      </div>
+    </div>
+    <div>
+      <div class="box ok"><h3>Mientras tanto, tú</h3><p>Estabas cenando. No viste el celular. La cita ya está en tu Google Calendar cuando lo revisas el domingo.</p></div>
+      <div class="box" style="margin-top:14px"><h3>Lo que el asistente ya sabía</h3><p>Que el martes 11 tenías libre de 9 a 12, que la SM 21 está dentro de tu zona, y que necesitas 45 minutos de traslado desde tu cita anterior.</p></div>
+      <div class="box warn" style="margin-top:14px"><h3>Lo que NO hizo</h3><p>No dio precio. Eso lo defines tú: puede decir "lo cotizamos en sitio", dar un rango, o pasarte la conversación.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <div class="eyebrow">Control</div>
+  <h2>El asistente no te quita el volante</h2>
+  <p class="lead">En cualquier momento entras tú y el bot se calla. Lo diseñé así a propósito: un asistente al que no puedes interrumpir es un riesgo, no una ayuda.</p>
+  <div class="grid g2">
+    <div class="box accent"><h3>🖥️ Una bandeja de entrada</h3><p>Ves todas las conversaciones desde el navegador o desde una app en tu celular. Si quieres contestar tú, escribes y el bot se hace a un lado en ese chat.</p></div>
+    <div class="box accent"><h3>📅 Tu calendario de siempre</h3><p>Las citas caen en tu Google Calendar normal. Mueves, cambias o cancelas desde ahí, como ya lo haces hoy.</p></div>
+    <div class="box"><h3>🔁 Aviso automático</h3><p>Si mueves una cita, el cliente recibe el aviso solo. Tú no tienes que acordarte de avisarle.</p></div>
+    <div class="box"><h3>👥 Tu futuro asistente</h3><p>Cuando contrates a alguien para la agenda, le das acceso a esa misma bandeja. No necesita tu celular ni tu número personal.</p></div>
+  </div>
+  <div class="note warn"><strong>Un cambio de hábito, dicho de frente:</strong> ese número dejas de verlo en la app de WhatsApp del celular; lo atiendes desde la bandeja nueva. No importa que uses iPhone — es igual en cualquier teléfono.</div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div class="eyebrow">Cómo funciona por dentro</div>
+  <h2>En resumen: tres piezas</h2>
+  <div class="flow">
+    <div class="node"><span class="ico">💬</span><b>WhatsApp</b><span class="d">El cliente escribe a tu número de negocio, como siempre</span></div>
+    <div class="arrow">→</div>
+    <div class="node"><span class="ico">⚙️</span><b>El asistente</b><span class="d">Entiende el mensaje, revisa tu disponibilidad real y responde</span></div>
+    <div class="arrow">→</div>
+    <div class="node"><span class="ico">📅</span><b>Tu calendario</b><span class="d">La cita queda registrada en tu Google Calendar</span></div>
+  </div>
+  <div class="flow" style="margin-top:14px">
+    <div class="node" style="background:var(--accent-soft);border-color:#bfdfe3"><span class="ico">👨‍🔧</span><b>Tú, en cualquier punto del camino</b><span class="d">Entras a la bandeja y tomas el control del chat, o editas la cita directo en el calendario</span></div>
+  </div>
+  <div class="note">Todo corre en un servidor que yo administro, con respaldos y monitoreo. Tú no instalas nada ni administras ningún programa.</div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="eyebrow">Alcance</div>
+  <h2>Qué incluye la Fase 1 — y qué no</h2>
+  <div class="grid g2">
+    <div class="box ok">
+      <h3 style="color:var(--ok)">Incluido</h3>
+      <ul class="check" style="margin-top:8px">
+        <li>Respuesta automática 24/7 a prospectos</li>
+        <li>Agendado automático con tus reglas</li>
+        <li>Conexión con tu Google Calendar</li>
+        <li>Margen de traslado entre citas</li>
+        <li>Aviso automático al cliente si mueves una cita</li>
+        <li>Bandeja con control humano</li>
+        <li><strong>Página web de una sola pantalla</strong> con tus datos y aviso de privacidad</li>
+        <li>Un mes de ajustes después de arrancar</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3 style="color:var(--danger)">No incluido en Fase 1</h3>
+      <ul class="cross" style="margin-top:8px">
+        <li>Búsqueda de precios de materiales</li>
+        <li>Generación de contenido o subida de videos</li>
+        <li>Segundo número interno para ti y tu asistente</li>
+        <li>Sitio web completo (blog, galería, formularios)</li>
+        <li>Cobros o pagos dentro de WhatsApp</li>
+        <li>Quejas y garantías — eso se escala a ti</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">La página web va incluida en el arranque. Normalmente se cotiza aparte: la necesitamos porque WhatsApp exige que el negocio tenga sitio y aviso de privacidad para aprobarte.</div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <div class="eyebrow">Lo que necesito de ti</div>
+  <h2>La parte más difícil ya la tienes resuelta</h2>
+  <p class="lead">Estás dado de alta en el SAT como persona física con actividad empresarial y facturas como <strong>COZATEL</strong>. Ese era el único requisito que podía frenar el proyecto entero.</p>
+  <table>
+    <tr><th style="width:34%">Qué</th><th>Para qué</th><th style="width:16%">Quién</th></tr>
+    <tr><td><strong>✅ RFC con actividad empresarial</strong><br><span style="font-size:13.5px">Ya lo tienes — solo necesito la Constancia de Situación Fiscal vigente en PDF</span></td><td>WhatsApp (Meta) no verifica "a una persona con un taller": verifica a un negocio registrado ante el SAT. <strong>Ya lo cumples.</strong></td><td><span class="tag you">Tú</span></td></tr>
+    <tr><td><strong>✅ Nombre comercial: COZATEL</strong></td><td>Se va a usar idéntico en el SAT, el dominio, la web y WhatsApp. La causa #1 de rechazo es que no coincidan — con el nombre ya definido, ese riesgo se cierra.</td><td><span class="tag both">Juntos</span></td></tr>
+    <tr><td><strong>Comprobante de domicilio e identificación</strong></td><td>Meta cruza el domicilio de tus documentos con el de tu página web. Recibo de luz o estado de cuenta reciente, más tu INE.</td><td><span class="tag you">Tú</span></td></tr>
+    <tr><td><strong>Un número de teléfono nuevo</strong></td><td>Dedicado al negocio. Recomiendo no tocar tu número personal — te explico por qué en la siguiente.</td><td><span class="tag you">Tú</span></td></tr>
+    <tr><td><strong>Dominio de internet</strong><br><span style="font-size:13.5px">~$300 MXN al año, a tu nombre</span></td><td>Para tu página y para que WhatsApp valide el negocio. Yo lo configuro y hago la página.</td><td><span class="tag both">Juntos</span></td></tr>
+    <tr><td><strong>Tu calendario y tus reglas</strong></td><td>Horarios, duración de cada tipo de servicio, zona de cobertura, y qué puede y qué no puede decir el bot.</td><td><span class="tag both">45 min juntos</span></td></tr>
+  </table>
+  <div class="note"><strong>Lo único que necesito de inmediato:</strong> tu Constancia de Situación Fiscal en PDF y confirmar que el domicilio que trae es el que quieres que aparezca en tu página. Con eso mando la verificación a Meta, que es lo más lento de todo.</div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <div class="eyebrow">Decisión importante</div>
+  <h2>El número de WhatsApp</h2>
+  <p class="lead">Es la única decisión de este proyecto que es difícil de revertir. Vale la pena hablarla bien.</p>
+  <table>
+    <tr><th style="width:32%">Opción</th><th>A favor</th><th>En contra</th></tr>
+    <tr>
+      <td><strong>Número nuevo dedicado</strong><br><span class="tag me">Recomendado</span></td>
+      <td>Cero riesgo. Tu número personal sigue igual. Si algo no te gusta, no pierdes nada y lo apagamos.</td>
+      <td>Costo de una línea nueva ($0–200 MXN al mes) y hay que difundir el número.</td>
+    </tr>
+    <tr>
+      <td><strong>Usar tu número actual</strong></td>
+      <td>Tus clientes ya lo conocen.</td>
+      <td><strong>Ese número deja de funcionar en la app de tu celular</strong> y <strong>el historial de conversaciones no se traslada.</strong> En la práctica, irreversible.</td>
+    </tr>
+  </table>
+  <div class="note warn">Mi recomendación: arrancamos con número nuevo para la etapa de prueba. Si el sistema te convence y quieres migrar el otro después, lo evaluamos con calma y sabiendo exactamente qué implica.</div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <div class="eyebrow">Tiempos</div>
+  <h2>Cuatro semanas, si no se atora la verificación</h2>
+  <div class="timeline">
+    <div class="tstep"><div class="tweek">Semana 1</div><div class="tbody"><b>Papeles y decisiones</b><span>Me pasas tu Constancia de Situación Fiscal, compramos el dominio de COZATEL y decidimos el número. El nombre ya está definido, así que este paso es corto.</span></div></div>
+    <div class="tstep"><div class="tweek">Semana 1–2</div><div class="tbody"><b>Tu página y la solicitud a WhatsApp</b><span>Publico tu página con aviso de privacidad y mandamos la verificación del negocio a Meta. <strong>Es el trámite más lento y no depende de nosotros</strong> — por eso arranca el día uno. Mientras tanto monto el servidor en paralelo.</span></div></div>
+    <div class="tstep"><div class="tweek">Semana 2–3</div><div class="tbody"><b>Alta del número y tus reglas</b><span>Damos de alta el número, conecto tu Google Calendar y nos sentamos 45 minutos a levantar tus horarios, zonas y guión.</span></div></div>
+    <div class="tstep"><div class="tweek">Semana 3–4</div><div class="tbody"><b>Construcción y pruebas</b><span>Armo el flujo del asistente y lo probamos entre nosotros antes de que le hable a un cliente real.</span></div></div>
+  </div>
+  <div class="note warn">La verificación de Meta puede tardar de días a varias semanas si hay que corregir documentos. Es el único punto donde el calendario se puede mover — y justo por eso lo empezamos primero.</div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <div class="eyebrow">Inversión</div>
+  <h2>Instalación única + mensualidad</h2>
+  <table>
+    <tr><th style="width:38%">Concepto</th><th>Qué cubre</th><th style="width:20%;text-align:right">Monto</th></tr>
+    <tr><td><strong>Instalación</strong><br><span style="font-size:13.5px">Pago único</span></td><td>Montaje completo: servidor, conexión con WhatsApp, calendario, tu página web, configuración de tus reglas y pruebas.</td><td style="text-align:right"><span class="price">$7,000 MXN</span></td></tr>
+    <tr><td><strong>Mensualidad</strong><br><span style="font-size:13.5px">Incluye 100 conversaciones al mes</span></td><td>Operación del servicio, hospedaje, uso de la inteligencia artificial, costo de los mensajes de WhatsApp, monitoreo, respaldos y soporte.</td><td style="text-align:right"><span class="price">$1,750 MXN</span></td></tr>
+    <tr><td><strong>Bloque adicional</strong><br><span style="font-size:13.5px">Solo si te pasas de las 100</span></td><td>200 conversaciones más. Te lo explico a detalle en la siguiente lámina: no es un cargo sorpresa, es lo que pasa cuando el asistente te está trayendo mucho trabajo.</td><td style="text-align:right"><span class="price">$900 MXN</span></td></tr>
+    <tr><td><strong>Funciones nuevas</strong></td><td>Todo lo que salga del alcance de Fase 1 se cotiza por proyecto y se aprueba antes de hacerlo.</td><td style="text-align:right;color:var(--ink-soft)">Por proyecto</td></tr>
+  </table>
+  <!-- TODO Eduardo: definir si los montos son con o sin IVA y si emites factura. Ajustar esta nota antes de presentar. -->
+  <div class="note">La mensualidad no es una renta de software: incluye que el sistema esté vivo, vigilado y respaldado, y que alguien lo arregle si algo se cae un domingo.</div>
+  <h3 style="margin-top:28px;font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft)">Gastos que van directo a tu nombre (no me los pagas a mí)</h3>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="box"><h3>🌐 Dominio</h3><p>~$300 MXN al año. Queda a tu nombre porque es tu marca.</p></div>
+    <div class="box"><h3>📱 Línea telefónica nueva</h3><p>De $0 a $200 MXN al mes, según el plan que elijas.</p></div>
+  </div>
+  <div class="note">Los pongo explícitos para que no aparezcan después como cargos sorpresa.</div>
+</section>
+
+<!-- 11b -->
+<section class="slide">
+  <div class="eyebrow">Por qué la mensualidad se cobra así</div>
+  <h2>Este servicio tiene un costo por uso —<br>no es un programa que se instala y ya</h2>
+  <p class="lead">Prefiero explicártelo ahora a que te llegue como sorpresa en el mes 4.</p>
+  <div class="grid g3">
+    <div class="box"><h3>💬 WhatsApp cobra</h3><p>A partir de octubre de 2026, Meta cobra <strong>cada mensaje que tu negocio envía</strong>. Antes eran gratis. Ya está contemplado en la mensualidad.</p></div>
+    <div class="box"><h3>🧠 La inteligencia artificial cobra</h3><p>Cada mensaje que el asistente entiende y responde consume servicio de IA. Se paga por uso, no por licencia.</p></div>
+    <div class="box"><h3>🎙️ Las notas de voz cobran</h3><p>Transcribir el audio de tus clientes también tiene costo por minuto.</p></div>
+  </div>
+  <p style="margin-top:24px">Por eso la mensualidad no es una tarifa plana ilimitada: <strong>trae una bolsa de 100 conversaciones al mes incluidas</strong>, que es lo que estimamos para tu volumen actual.</p>
+  <div class="note warn">
+    <strong>Qué cuenta como una conversación:</strong> todo lo que una persona te escriba en un lapso de 24 horas cuenta como <strong>una sola</strong>, aunque se manden 30 mensajes de ida y vuelta.
+    Pero ojo: cuenta <strong>cualquier</strong> persona que escriba — no solo prospectos nuevos. Un cliente de contrato que pide reagendar, o uno que pregunta una duda, también es una conversación.
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="box ok"><h3>✅ Los primeros 3 meses no te cobro excedente</h3><p>Medimos tu volumen real. Si resulta que tus 100 se quedan cortas, ajustamos la bolsa por escrito antes de cobrarte un peso extra. No quiero que la primera factura sea una sorpresa.</p></div>
+    <div class="box"><h3>📈 Si te pasas después de eso</h3><p>Un bloque de <strong>200 conversaciones más por $900 MXN</strong>. Solo se cobra el mes en que lo uses. Y si estás llegando a ese punto, es porque el asistente te está trayendo bastante más trabajo del que esperábamos.</p></div>
+  </div>
+  <div class="note">Vas a poder ver tu consumo del mes cuando lo pidas. No es una caja negra.</div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <div class="eyebrow">Condiciones</div>
+  <h2>Cómo se paga y qué te protege</h2>
+  <div class="grid g2">
+    <div class="box accent"><h3>💵 50 / 50</h3><p>Mitad de la instalación al arrancar, mitad al entregar funcionando. No pagas todo por adelantado.</p></div>
+    <div class="box accent"><h3>📆 La mensualidad empieza después</h3><p>Corre a partir de que el sistema queda operando y probado, no desde que decimos que sí.</p></div>
+    <div class="box ok"><h3>🛠️ Un mes de ajustes incluido</h3><p>El primer mes ajustamos horarios, tono y respuestas las veces que haga falta, sin costo.</p></div>
+    <div class="box ok"><h3>🚪 Sin plazo forzoso</h3><p>Cancelas cuando quieras avisando 30 días antes. No hay contrato mínimo.</p></div>
+    <div class="box"><h3>🔑 Tus cuentas son tuyas</h3><p>Dominio, número, cuenta de WhatsApp, calendario y datos de tus clientes quedan a tu nombre. Si algún día paramos, te entrego el control y exporto tus datos.</p></div>
+    <div class="box"><h3>📈 Ajuste anual</h3><p>La mensualidad se ajusta por inflación una vez al año, y sube solo si activamos funciones nuevas que te den más valor.</p></div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <div class="eyebrow">Después</div>
+  <h2>Lo que se puede sumar más adelante</h2>
+  <p class="lead">Nada de esto entra en Fase 1. Lo menciono para que sepas hacia dónde puede crecer, no para venderlo hoy.</p>
+  <div class="grid g3">
+    <div class="box"><h3>🔍 Precios de materiales</h3><p>Que el asistente consulte precios de materiales para apoyarte al cotizar.</p></div>
+    <div class="box"><h3>🎬 Contenido</h3><p>Apoyo para generar y publicar contenido de tus trabajos.</p></div>
+    <div class="box"><h3>📞 Segundo número interno</h3><p>Un número aparte solo para ti y tu futuro asistente, separado del de clientes, para no exponer información interna.</p></div>
+  </div>
+  <div class="note">Cada uno se cotiza por separado cuando lo quieras y con su propio alcance. Primero que la agenda funcione bien.</div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <div class="eyebrow">Transparencia</div>
+  <h2>Qué podría salir mal</h2>
+  <p class="lead">Prefiero decírtelo antes que sorprenderte a medio camino.</p>
+  <div class="grid g2">
+    <div class="box warn"><h3>🟡 Que Meta se tarde en verificar</h3><p>De días a semanas. No depende de nosotros; se mitiga arrancando el trámite el día uno.</p></div>
+    <div class="box warn"><h3>🟡 Que las 100 conversaciones se queden cortas</h3><p>Es una estimación, no un dato tuyo todavía. Por eso los primeros 3 meses medimos sin cobrar excedente y ajustamos con números reales.</p></div>
+    <div class="box warn"><h3>🟡 Que el nombre no coincida entre documentos</h3><p>Rechazo automático y semanas de reenvío. Con COZATEL ya definido, solo hay que usarlo idéntico en el dominio, la página y Meta.</p></div>
+    <div class="box"><h3>🟢 Que el bot conteste algo raro</h3><p>Por eso probamos entre nosotros antes de soltarlo, y por eso tú puedes interrumpirlo en cualquier chat.</p></div>
+  </div>
+  <div class="note ok" style="border-left-color:var(--ok);background:var(--ok-soft)"><strong>El riesgo grande ya se cerró:</strong> el que podía frenar el proyecto completo era que no estuvieras dado de alta en el SAT con actividad empresarial. Ya lo confirmamos.</div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <div class="eyebrow">Siguiente paso</div>
+  <h2>Seis preguntas y arrancamos</h2>
+  <ul class="num">
+    <li>¿Me pasas tu Constancia de Situación Fiscal? ¿El domicilio que trae es el que quieres publicar?</li>
+    <li>¿Los clientes te van a ver como <strong>COZATEL</strong> tal cual, o con algo agregado (COZATEL Climas, por ejemplo)?</li>
+    <li>¿Número nuevo o quieres usar el que ya tienes?</li>
+    <li>¿Ya usas Google Calendar, o dónde llevas tus citas hoy?</li>
+    <li>¿Más o menos cuántas personas nuevas te escriben al mes? ¿Y cuántas veces te escriben clientes que ya atiendes?</li>
+    <li>¿Tienes logo y fotos de trabajos para la página? ¿Cuál es tu zona de cobertura y cobras viáticos fuera de ella?</li>
+  </ul>
+  <div class="note">La <strong>#5</strong> es la que más me importa: de ahí sale si 100 conversaciones al mes te alcanzan o hay que ajustar la bolsa desde el arranque. Con tu respuesta a la #1, esta misma semana compramos el dominio y mando la verificación a Meta, que es lo más lento. Todo lo demás avanza en paralelo.</div>
+</section>
+
+<!-- 16 -->
+<section class="slide cover">
+  <div class="eyebrow">Gracias</div>
+  <h1>¿Qué te gusta y qué te preocupa?</h1>
+  <p class="sub">Prefiero ajustar el alcance ahora que después.</p>
+  <div class="meta">Eduardo Martínez · e.martinez.tamez@gmail.com</div>
+</section>
+
+</div>
+
+<div class="hint">← → o espacio para navegar</div>
+
+<div class="nav">
+  <button id="prev">← Anterior</button>
+  <span class="counter" id="counter"></span>
+  <button id="next">Siguiente →</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let i = 0;
+  const counter = document.getElementById('counter');
+  const bar = document.getElementById('bar');
+  const prev = document.getElementById('prev');
+  const next = document.getElementById('next');
+
+  function render(){
+    slides.forEach((s,n)=>s.classList.toggle('active', n===i));
+    counter.textContent = (i+1) + ' / ' + slides.length;
+    bar.style.width = ((i+1)/slides.length*100) + '%';
+    prev.disabled = i===0;
+    next.disabled = i===slides.length-1;
+    slides[i].scrollTop = 0;
+    // Permite mandar un link directo a una lámina: ...html#7
+    history.replaceState(null, '', '#' + (i+1));
+  }
+  function go(d){
+    const n = Math.min(slides.length-1, Math.max(0, i+d));
+    if(n===i) return;
+    i = n; render();
+  }
+
+  prev.addEventListener('click', ()=>go(-1));
+  next.addEventListener('click', ()=>go(1));
+  document.addEventListener('keydown', e=>{
+    if(['ArrowRight','PageDown',' '].includes(e.key)){ e.preventDefault(); go(1); }
+    if(['ArrowLeft','PageUp'].includes(e.key)){ e.preventDefault(); go(-1); }
+    if(e.key==='Home'){ i=0; render(); }
+    if(e.key==='End'){ i=slides.length-1; render(); }
+  });
+
+  // Deslizar con el dedo. Solo cuenta si el gesto es claramente horizontal,
+  // para no robarle el scroll vertical a las láminas largas.
+  let x0=null, y0=null;
+  document.addEventListener('touchstart', e=>{
+    if(e.touches.length!==1){ x0=null; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, {passive:true});
+  document.addEventListener('touchend', e=>{
+    if(x0===null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    const dy = e.changedTouches[0].clientY - y0;
+    x0 = null;
+    if(Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.6) go(dx < 0 ? 1 : -1);
+  }, {passive:true});
+
+  // Arranca en la lámina del hash, si viene
+  const fromHash = parseInt((location.hash||'').replace('#',''), 10);
+  if(fromHash >= 1 && fromHash <= slides.length) i = fromHash - 1;
+
+  render();
+
+  // Aviso de "desliza" solo en pantallas táctiles, y solo la primera vez
+  if(window.matchMedia('(hover:none)').matches){
+    const t = document.createElement('div');
+    t.textContent = 'Desliza para avanzar →';
+    t.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);'+
+      'bottom:calc(74px + env(safe-area-inset-bottom));background:rgba(18,35,46,.86);'+
+      'color:#fff;padding:9px 16px;border-radius:999px;font-size:13.5px;'+
+      'z-index:20;transition:opacity .5s ease;pointer-events:none';
+    document.body.appendChild(t);
+    setTimeout(()=>{ t.style.opacity='0'; }, 2600);
+    setTimeout(()=>{ t.remove(); }, 3300);
+  }
+</script>
+</body>
+</html>
