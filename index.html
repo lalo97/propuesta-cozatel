@@ -8,6 +8,9 @@
 <title>Asistente de agenda por WhatsApp — Propuesta</title>
 <style>
   :root{
+    /* La paleta es clara a propósito. Sin esto, un iPhone en modo oscuro
+       puede invertirla solo y dejar la presentación en negro. */
+    color-scheme: light;
     --ink:#12232e;
     --ink-soft:#4a6572;
     --line:#dde5ea;
@@ -23,7 +26,7 @@
     --danger-soft:#fbeae8;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{-webkit-text-size-adjust:100%}
+  html{-webkit-text-size-adjust:100%;background:#f4f7f9}
   body{
     font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
     background:var(--bg);color:var(--ink);
